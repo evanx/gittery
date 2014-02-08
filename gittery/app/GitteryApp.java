@@ -41,7 +41,6 @@ public class GitteryApp implements HttpHandler {
     Logger logger = LoggerFactory.getLogger(GitteryApp.class);
     VellumHttpServer httpServer = new VellumHttpServer();
     String repo = "https://raw.github.com/evanx/angulardemo/master";
-    Map<String, String> map = new HashMap();
     
     public void start() throws Exception {
         httpServer.start(new HttpServerProperties(8081), this);
@@ -64,6 +63,8 @@ public class GitteryApp implements HttpHandler {
         String contentType = "text/html";
         if (path.endsWith(".json")) {
             contentType = "text/json";
+        } else if (path.endsWith(".js")) {
+            contentType = "text/javascript";
         }
         he.getResponseHeaders().set("Content-Type", contentType);
         he.getResponseBody().write(content);
