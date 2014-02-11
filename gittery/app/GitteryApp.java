@@ -22,11 +22,12 @@ package gittery.app;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.log4j.BasicConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,7 @@ public class GitteryApp implements HttpHandler {
     Logger logger = LoggerFactory.getLogger(GitteryApp.class);
     VellumHttpServer httpServer = new VellumHttpServer();
     String repo = "https://raw.github.com/evanx/angulardemo/master";
+    String root = "/home/evanx/NetBeansProjects/git/angulardemo";
     
     public void start() throws Exception {
         httpServer.start(new HttpServerProperties(8081), this);
@@ -52,23 +54,35 @@ public class GitteryApp implements HttpHandler {
         if (path.equals("/")) {
             path = "/index.html";
         }
-        String repoPath = repo + path;
-        logger.info("repoPath {}", repoPath);
-        URLConnection connection = new URL(repoPath).openConnection();
-        int length = connection.getContentLength();
-        byte[] content = new byte[length];
-        connection.getInputStream().read(content);
-        logger.info("content {}", new String(content));
-        he.sendResponseHeaders(200, length);
         String contentType = "text/html";
         if (path.endsWith(".json")) {
             contentType = "text/json";
         } else if (path.endsWith(".js")) {
             contentType = "text/javascript";
         }
-        he.getResponseHeaders().set("Content-Type", contentType);
-        he.getResponseBody().write(content);
-        he.close();
+        File file = new File(root + path);
+        String repoPath = repo + path;
+        logger.info("repoPath {}", repoPath);
+        try {
+            int length;
+            byte[] content;
+            if (file.exists()) {
+                length = (int) file.length();
+                content = new byte[length];
+                new FileInputStream(file).read(content);
+            } else {
+                URLConnection connection = new URL(repoPath).openConnection();
+                length = connection.getContentLength();
+                content = new byte[length];
+                connection.getInputStream().read(content);
+            }
+            logger.info("content {}", new String(content));
+            he.sendResponseHeaders(200, length);
+            he.getResponseHeaders().set("Content-Type", contentType);
+            he.getResponseBody().write(content);
+        } finally {
+            he.close();
+        }
     }
     
     public static void main(String[] args) throws Exception {
